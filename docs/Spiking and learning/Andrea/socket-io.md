@@ -1,6 +1,10 @@
-## Basics of socket.io
+# Basics of socket.io
 
 Socket.IO (WebSockets) allows a client and server to keep a persistent two-way connection so they can send messages to each other instantly, unlike normal HTTP requests where the client must repeatedly send separate request–response calls to the server.
+
+## A basic example "ChatTest"
+
+To learn how to use it let's create a frontend that takes messages in a form, on submission it sends them to the backend via a socket connection, and then the backend, as it receives them, it instantly broadcasts thems to all the socket clients that, as soon as they receive them, they disaply it.
 
 ### Backend
 
@@ -71,7 +75,7 @@ const io = new Server(server, {
 
 - Set up socket:
 
-You now define what happened everytime a client connects via Socket.IO to this server you do this by filling in this callback function.
+You now define what happens everytime a client connects via Socket.IO to this server you do this by defining this callback function.
 
 ```js
 io.on('connection', (socket) => {});
@@ -79,15 +83,15 @@ io.on('connection', (socket) => {});
 
 In defining this you have a socket object representing the connection to a client.
 
-Each connected client has a unique id. SO you want to log that.
+Each connected client has a unique id. SO you want to log that.2
 
 ```js
 console.log('client connected:', socket.id);
 ```
 
 - Then you decide what heppens when a clients sends a custom message e.g. one called "send-message".
-  - here we log that we received it
-  - and then biroad cast it to every client using `io.emit`
+  - we log that we received it
+  - and then broadcast it to every client using `io.emit`
     - You can alse decide to send the message to:
       - `socket.emit()` only the current client
       - `socket.broadcast.emit()` everyone except sender
@@ -197,3 +201,106 @@ Then set up front end project
 - npm create vite@latest
 - npm install
 - npm install socket.io-client
+
+1. Craete a "ChatTest.jsx" component and render it in app.jsx
+
+```js
+import { useState } from 'react';
+import ChatTest from './ChatTest';
+
+function App() {
+  const [count, setCount] = useState(0);
+
+  return <ChatTest />;
+}
+
+export default App;
+```
+
+2. Then we write the code for the chat component
+
+```js
+import { useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
+
+// we create a socket connection to the server
+// for simplicty we create it here but best practice is either to
+// A) Create it ann export it in a seprate socket.js file
+// B) Creata a custom hook that returns it
+const socket = io('http://localhost:3000');
+
+export default function ChatTest() {
+  // we create a state for the form input
+  const [input, setInput] = useState('');
+
+  // and a state for the messages received by the socket backend
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    // Subscribes to the "connect" event of the socket
+    // if successful it logs it
+    socket.on('connect', () => {
+      console.log('connected:', socket.id);
+    });
+
+    //Subscribes to the custom "receive-message" event we defined
+    // in the backend which broacast whatever the backend receives
+    // to the front end via this socket
+    // when this happens this callback is then run which
+    // adds the message to the message status
+    // and ret
+    socket.on('receive-message', (msg) => {
+      setMessages((prev) => [...prev, msg]);
+    });
+
+    // here we define the funcion that runs on unmounting
+    // of this component
+    // we remove the sockets in order to avoid memory leaks
+    return () => {
+      socket.off('receive-message');
+      socket.off('connect');
+    };
+  }, []);
+
+  const handleSubmit = (e) => {
+    //we stop the browser default behaviour on click
+    e.preventDefault();
+
+    // we prevent empty submission
+    if (!input.trim()) return;
+
+    // we send the message via socket to the server
+    socket.emit('send-message', input);
+
+    // we clear the form
+    setInput('');
+  };
+  return (
+    <div>
+      <h1>Socket test</h1>
+      <form onSubmit={handleSubmit}>
+        <input
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Type message..."
+        />
+        <button type="submit">Send</button>
+      </form>
+
+      <ul>
+        {/* we map over the array to print the messages 
+        we use the array index (i) as the react key */}
+        {messages.map((m, i) => (
+          <li key={i}>{m}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+### How to run it
+
+- To run it start your backend with `npm run dev` the local server will start listening on port 3000
+- Then seprately run `npm run dev` in your front end which will start the vite dev server
+- then open many different tabs at http://localhost:5173/ and you will see that when you submit a message in one, it appears in all the others.
