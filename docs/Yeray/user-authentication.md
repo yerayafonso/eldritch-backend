@@ -67,6 +67,32 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
 });
 ```
 
+This requires a URI from Mongo to connect, which is used in the .env file.
+
+### routes/auth.js
+
+This is where the logic for the authentication takes place, with some functionality extracted into utils functions.
+
+First, you must import express from express and create a router and then import hash and compare from bcrypt
+
+```js
+const express = require('express');
+const router = express.Router();
+const { hash, compare } = require('bcryptjs');
+```
+
+Then the authentication logic takes place based on the end point. To sign up, it is a post request on the router. This takes an email and password from the reqeust body and checks if the user exists, and throws an error if so.
+
+To sign in, there is another route, that checks if the user exists in the database and will throw an error if the user does not exist. If the user does exist, specific access and refresh tokens are generated for the user, and the user can successfully "sign in".
+
+To access a protected route, the user must first sign in to generate the access token and then use that token in the request authorisation section to access this route.
+
 ## Frontend
 
-The frontend is relatively simple. It requires a form element with an input for the email and input for the password. Using a submit button, we can extract the value of these input and make a post request to the api to register a user
+The frontend is relatively simple. It requires a form element with an input for the email and input for the password. Using a submit button, we can extract the value of these input and make a post request to the api to register a user.
+
+Same to sign in a user.
+
+### Next steps
+
+Figuring out how to use the authorisation token in the front end
