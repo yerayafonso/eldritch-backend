@@ -36,3 +36,17 @@ export async function saveMatchPlayers(_data) {
   // data format [{ matchId, userId, accuracy }, ...]
   // called at: gameEnded, once per match, after saveMatch
 }
+
+// functions needed for room table
+
+export async function createRoomRecord(_roomCode) {
+  // to be filled in
+  // insert new row into ROOMS table with code = roomCode and created_at = current timestamp
+  // called at: joinRoom
+}
+
+export async function updateRoomEnded(_roomCode) {
+  // to be filled in
+  // action: update existing row in ROOMS table where code = roomCode, set ended_at = current timestamp
+  // called at: gameEnded
+}
