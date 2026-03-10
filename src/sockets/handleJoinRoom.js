@@ -2,12 +2,13 @@
 import { generateRoomCode } from '../utils/generateRoomCode.js';
 import { rooms } from '../rooms.js';
 import { MAX_PLAYERS } from '../constants.js';
+import { getCharacter } from '../db/queries.js';
 
 export async function handleJoinRoom(io, socket, payload) {
   // if we recive a roomCode it means that are trying to join
   // if not that they are creating a room
 
-  let { name, roomCode: incomingCode, userId } = payload;
+  let { name, roomCode: incomingCode, userId, characterId } = payload;
 
   if (!name) {
     socket.emit('joinError', { message: 'Name is required', code: 'NO_NAME' });
@@ -17,6 +18,27 @@ export async function handleJoinRoom(io, socket, payload) {
   if (!userId) {
     socket.emit('joinError', { message: 'User is required', code: 'NO_USER' });
     return;
+  }
+
+  if (!characterId) {
+    socket.emit('joinError', { message: 'Character selection is required', code: 'NO_CHARACTER' });
+    return;
+  }
+
+  let selectedCharacter;
+  try {
+    selectedCharacter = await getCharacter(characterId);
+
+    if (!selectedCharacter) {
+      socket.emit('joinError', {
+        message: 'Invalid character selected',
+        code: 'INVALID_CHARACTER',
+      });
+      return;
+    }
+  } catch (err) {
+    console.error('DB Error:', err);
+    return socket.emit('joinError', { message: 'Could not fetch character', code: 'DB_ERROR' });
   }
 
   try {
@@ -51,7 +73,7 @@ export async function handleJoinRoom(io, socket, payload) {
       code: code,
       hostUserId: userId,
       roomStatus: 'lobby',
-      players: [{ userId: userId, socketId: socket.id, name: name }],
+      players: [{ userId: userId, socketId: socket.id, name: name, character: selectedCharacter }],
     };
 
     rooms[code] = roomObject;
@@ -86,7 +108,12 @@ export async function handleJoinRoom(io, socket, payload) {
       });
       return;
     }
-    rooms[code].players.push({ userId: userId, socketId: socket.id, name: name });
+    rooms[code].players.push({
+      userId: userId,
+      socketId: socket.id,
+      name: name,
+      character: selectedCharacter,
+    });
   }
 
   socket.join(code);
@@ -98,6 +125,7 @@ export async function handleJoinRoom(io, socket, payload) {
   const publicPlayers = rooms[code].players.map((player) => ({
     userId: player.userId,
     name: player.name,
+    character: player.character,
   }));
 
   const lobbyUpdatedPayload = {
@@ -106,6 +134,13 @@ export async function handleJoinRoom(io, socket, payload) {
     players: publicPlayers,
     roomStatus: 'lobby',
   };
+
+  console.log('player joined room', {
+    socketId: socket.id,
+    userId: socket.data.userId,
+    name: socket.data.name,
+    roomCode: socket.data.roomCode,
+  });
 
   io.to(code).emit('lobbyUpdated', lobbyUpdatedPayload);
 }
