@@ -8,6 +8,7 @@ export async function handleJoinRoom(io, socket, payload) {
   // if we recive a roomCode it means that are trying to join
   // if not that they are creating a room
 
+  // destructure payload
   let { name, roomCode: incomingCode, userId, characterId } = payload;
 
   if (!name) {
