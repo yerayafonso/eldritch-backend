@@ -8,7 +8,6 @@ export async function handleJoinRoom(io, socket, payload) {
   // if we recive a roomCode it means that are trying to join
   // if not that they are creating a room
 
-  // destructure payload
   let { name, roomCode: incomingCode, userId, characterId } = payload;
 
   if (!name) {
@@ -43,7 +42,7 @@ export async function handleJoinRoom(io, socket, payload) {
   }
 
   try {
-    // await saveUser({ id: userId, name: name });
+    // await saveUser({ id: userId, name: name }); placeholder call
   } catch (err) {
     console.error('DB Error:', err);
     return socket.emit('joinError', { message: 'Could not write to DB', code: 'DB_ERROR' });
@@ -61,7 +60,7 @@ export async function handleJoinRoom(io, socket, payload) {
     }
 
     try {
-      //   await createRoomRecord(code);
+      //   await createRoomRecord(code); placeholder call
     } catch {
       socket.emit('joinError', {
         message: 'Unable to create room record in DB',
@@ -74,7 +73,16 @@ export async function handleJoinRoom(io, socket, payload) {
       code: code,
       hostUserId: userId,
       roomStatus: 'lobby',
-      players: [{ userId: userId, socketId: socket.id, name: name, character: selectedCharacter }],
+      players: [
+        {
+          userId: userId,
+          socketId: socket.id,
+          name: name,
+          character: selectedCharacter,
+          correctAnswers: 0,
+          totalQuestions: 0,
+        },
+      ],
     };
 
     rooms[code] = roomObject;
@@ -114,6 +122,8 @@ export async function handleJoinRoom(io, socket, payload) {
       socketId: socket.id,
       name: name,
       character: selectedCharacter,
+      correctAnswers: 0,
+      totalQuestions: 0,
     });
   }
 
