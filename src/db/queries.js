@@ -3,13 +3,16 @@
 // Yeray is working on rewriting them to query the database
 
 export async function saveUser({ user_id: _id, name: _name }) {
-  // to be filled in
+  // Function content: to be filled in
+  // Inserts or updates a user record in the USERS table using their UUID and display name.
   // data format: { user_id: uuid, name: string }
 }
 
 export async function getMonsterForStage(stageNumber) {
-  //stages for now are 1,2,3 and map to easy medium hard mosnter difficulty_level
-  // for now it returns a hardcoded monster, to update to query DB
+  // Function content: to be replaced (currently returns mocks)
+  // Retrieves a single monster object from the MONSTERS table corresponding to the current game stage.
+  // N.B. stages for now are 1,2,3 and map to easy medium hard mosnter difficulty_level
+
   const mockMonsters = [
     {
       monster_id: 1,
@@ -41,7 +44,9 @@ export async function getMonsterForStage(stageNumber) {
 }
 
 export async function getRandomQuestions(_quantity, _difficulty) {
-  // Return mock questions for now
+  // Function content: to be replaced (currently returns mocks)
+  // Selects a specific quantity of random rows from the QUESTIONS table that match the requested difficulty level.
+
   const allQuestions = [
     {
       question_id: 1,
@@ -231,46 +236,49 @@ export async function getRandomQuestions(_quantity, _difficulty) {
 }
 
 export async function saveMatch(_data) {
-  // to be filled in
+  // Function content: to be filled in
+  // Inserts a completed game's high-level stats into the MATCHES table and returns the newly generated match_id, needed by saveMatchPlayers
   // data format { roomCode, hostUserId, monsterId, startedAt, endedAt, result }
   // called at: gameEnded, once per match
-  // must return { match_id } — the new match id, needed by saveMatchPlayers
 }
+
 export async function saveMatchPlayers(_data) {
-  // to be filled in
-  // data format [{ matchId, userId, accuracy }, ...]
+  // Function content: to be filled in
+  // Inserts individual player accuracy scores for a specific match into the MATCH_PLAYERS junction table.
+  // data format [{ match_id, user_id, accuracy }, ...]
   // called at: gameEnded, once per match, after saveMatch
 }
 
-// functions needed for room table
-
 export async function createRoomRecord(_roomCode) {
-  // to be filled in
+  // Function content: to be filled in
+  // Inserts a new row into the ROOMS table to log the creation time of a specific room code.
   // insert new row into ROOMS table with code = roomCode and created_at = current timestamp
   // called at: joinRoom
 }
 
 export async function updateRoomEnded(_roomCode) {
   // to be filled in
-  // action: update existing row in ROOMS table where code = roomCode, set ended_at = current timestamp
+  // Updates an existing row in the ROOMS table with the final timestamp when that game concludes. update existing row in ROOMS table where code = roomCode, set ended_at = current timestamp
   // called at: gameEnded
 }
 
 export async function getAllCharacters() {
-  // this is the function that will be needed for GET /api/characters
+  // Function content: to be filled in
+  // Retrieves the complete list of available characters from the CHARACTERS table for the frontend selection API GET /api/characters
 }
 
 export async function getCharacter(characterId) {
-  // Action: retrieves chracter based on ID
-  // we still need this (even if the charcter selection screen feteches via API) because backend needs to load character
-  // from BE not from FE
+  // Function content: to be replaced (currently returns mocks)
+  // Retrieves a specific character's stats from the CHARACTERS table using their character_id for backend game initialization.
+  // we still need this (even if the charcter selection screen feteches via API) because backend needs to load character from BE not from FE
+
   const mockCharacters = [
     {
       character_id: 1,
       name: 'The Scholar',
       image_name: 'character1.png',
       description: 'A seeker of forbidden knowledge.',
-      backstory: 'Once a professor at Miskatonic, they saw too much in the restricted archives.',
+      bio: 'Once a professor at Miskatonic, they saw too much in the restricted archives.',
       base_attack: 5,
       base_sanity: 150,
       difficulty_scaling: 1,
@@ -280,7 +288,7 @@ export async function getCharacter(characterId) {
       name: 'The Investigator',
       image_name: 'character2.png',
       description: 'Used to dealing with the unknown.',
-      backstory: 'A former private eye who specializes in missing persons cases that "dont exist."',
+      bio: 'A former private eye who specializes in missing persons cases that "dont exist."',
       base_attack: 10,
       base_sanity: 120,
       difficulty_scaling: 1,
@@ -290,8 +298,7 @@ export async function getCharacter(characterId) {
       name: 'The Occultist',
       image_name: 'character3.png',
       description: 'Dabbles in the dark arts.',
-      backstory:
-        'They realized early on that to fight the darkness, one must understand its language.',
+      bio: 'They realized early on that to fight the darkness, one must understand its language.',
       base_attack: 15,
       base_sanity: 90,
       difficulty_scaling: 2,
@@ -301,8 +308,7 @@ export async function getCharacter(characterId) {
       name: 'The Veteran',
       image_name: 'character4.png',
       description: 'Hardened by past conflicts.',
-      backstory:
-        'Survived a trench assault that defied the laws of physics. They haven’t slept since.',
+      bio: 'Survived a trench assault that defied the laws of physics. They haven’t slept since.',
       base_attack: 20,
       base_sanity: 70,
       difficulty_scaling: 2,
