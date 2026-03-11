@@ -1,8 +1,6 @@
 import { rooms } from '../rooms.js';
-import { MIN_PLAYERS } from '../constants.js';
-import { QUESTIONS_PER_MONSTER } from '../constants.js';
-import { getMonsterForStage } from '../db/queries.js';
-import { getRandomQuestions } from '../db/queries.js';
+import { DIFFICULTY_MAP, MIN_PLAYERS, QUESTIONS_PER_MONSTER } from '../constants.js';
+import { getMonsterForStage, getRandomQuestions } from '../db/queries.js';
 import { startNextRound } from '../logic/startNextRound.js';
 
 export async function handleStartGame(io, socket) {
@@ -51,8 +49,8 @@ export async function handleStartGame(io, socket) {
   rooms[code].monsterHp = rooms[code].monster.max_hp;
 
   // Load questions in memory
-  const difficultyMap = ['easy', 'medium', 'hard'];
-  const stageDifficulty = difficultyMap[rooms[code].currentStage - 1];
+
+  const stageDifficulty = DIFFICULTY_MAP[rooms[code].currentStage - 1];
 
   const monsterQuestions = await getRandomQuestions(QUESTIONS_PER_MONSTER, stageDifficulty);
   rooms[code].questions = monsterQuestions;
