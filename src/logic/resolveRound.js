@@ -61,11 +61,23 @@ export async function resolveRound(io, code) {
   if (rooms[code].teamHp < 0) rooms[code].teamHp = 0;
 
   // GAME BRANCHING: 1) GAMEOVER (defeat or vicotory) or 2) LEVEL UP 3) NEXT ROUND
+  const isOutOfQuestions =
+    rooms[code].currentQuestionIndex >= rooms[code].questions.length - 1 &&
+    rooms[code].monsterHp > 0;
 
-  const isDefeat = rooms[code].teamHp === 0;
+  const isDefeat = rooms[code].teamHp === 0 || isOutOfQuestions;
   const isVictory = rooms[code].monsterHp === 0 && rooms[code].currentStage === TOTAL_STAGES;
   const isGameOver = isDefeat || isVictory;
   const result = isVictory ? 'victory' : 'defeat';
+
+  let reason = '';
+  if (isVictory) {
+    reason = 'monster_defeated';
+  } else if (rooms[code].teamHp === 0) {
+    reason = 'team_hp_zero';
+  } else {
+    reason = 'out_of_questions';
+  }
 
   const baseResultPayload = {
     roundNumber: rooms[code].roundNumber,
@@ -88,6 +100,7 @@ export async function resolveRound(io, code) {
 
     const gameEndedPayload = {
       result: result,
+      reason: reason,
       monsterId: rooms[code].monster.monster_id,
       teamHpFinal: rooms[code].teamHp,
       monsterHpFinal: rooms[code].monsterHp,
