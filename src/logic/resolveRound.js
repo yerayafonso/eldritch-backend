@@ -1,5 +1,6 @@
 import { rooms } from '../rooms.js';
 import { getMonsterForStage, getRandomQuestions } from '../db/queries.js';
+// import { saveMatch, saveMatchPlayers } from '../db/queries.js';
 import { QUESTIONS_PER_MONSTER, DIFFICULTY_MAP, TOTAL_STAGES } from '../constants.js';
 import { startNextRound } from './startNextRound.js';
 import { calculateAccuracy } from '../utils/calculateAccuracy.js';
@@ -89,6 +90,25 @@ export async function resolveRound(io, code) {
     };
 
     io.to(code).emit('gameEnded', gameEndedPayload);
+
+    // Save match to DB - to enable once queries.js is connected to DB
+    // try {
+    //   const match_id = await saveMatch({
+    //     roomCode: code,
+    //     hostUserId: rooms[code].hostUserId,
+    //     startedAt: rooms[code].startedAt,
+    //     result: result,
+    //   });
+    //   await saveMatchPlayers(
+    //     perPlayerAccuracyArray.map((p) => ({
+    //       match_id: match_id,
+    //       user_id: p.userId,
+    //       accuracy: p.accuracy,
+    //     }))
+    //   );
+    // } catch (err) {
+    //   console.error('Failed to save match to DB', { code, result, err });
+    // }
 
     setTimeout(() => {
       delete rooms[code];
