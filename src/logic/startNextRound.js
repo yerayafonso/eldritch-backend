@@ -30,6 +30,7 @@ export function startNextRound(io, code) {
       image: rooms[code].monster.image,
     },
     question: {
+      id: question.question_id,
       prompt: question.prompt,
       options: {
         a: question.option_a,

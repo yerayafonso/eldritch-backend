@@ -38,14 +38,14 @@ export async function handleJoinRoom(io, socket, payload) {
     }
   } catch (err) {
     console.error('DB Error:', err);
-    return socket.emit('joinError', { message: 'Could not fetch character', code: 'DB_ERROR' });
+    return socket.emit('joinError', { message: 'Could not fetch character', code: 'SERVER_ERROR' });
   }
 
   try {
     // await saveUser({ user_id: userId, name: name }); placeholder call
   } catch (err) {
     console.error('DB Error:', err);
-    return socket.emit('joinError', { message: 'Could not write to DB', code: 'DB_ERROR' });
+    return socket.emit('joinError', { message: 'Could not write to DB', code: 'SERVER_ERROR' });
   }
   let code = incomingCode?.trim().toUpperCase();
 
