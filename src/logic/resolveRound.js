@@ -1,7 +1,12 @@
 import { rooms } from '../rooms.js';
 import { getMonsterForStage, getRandomQuestions } from '../db/queries.js';
-// import { saveMatch, saveMatchPlayers } from '../db/queries.js';
-import { QUESTIONS_PER_MONSTER, DIFFICULTY_MAP, TOTAL_STAGES } from '../constants.js';
+// import { saveMatch, saveMatchPlayers, updatedRommEnded } from '../db/queries.js';
+import {
+  QUESTIONS_PER_MONSTER,
+  DIFFICULTY_MAP,
+  TOTAL_STAGES,
+  ROOM_CLEANUP_DELAY_MS,
+} from '../constants.js';
 import { startNextRound } from './startNextRound.js';
 import { calculateAccuracy } from '../utils/calculateAccuracy.js';
 
@@ -110,9 +115,18 @@ export async function resolveRound(io, code) {
     //   console.error('Failed to save match to DB', { code, result, err });
     // }
 
-    setTimeout(() => {
-      delete rooms[code];
-    }, 180000); // 3 min delay before deleting the room to allow for stuff to happen if it needs to
+    setTimeout(async () => {
+      if (!rooms[code]) return;
+
+      try {
+        // COMMENTED OUT UNTIL DB is FUNCTIONAL
+        // await updateRoomEnded(code);
+      } catch (err) {
+        console.error('DB Error: Failed to update room ended_at on timeout', { code, err });
+      } finally {
+        delete rooms[code];
+      }
+    }, ROOM_CLEANUP_DELAY_MS);
   }
 
   // 2) NEXT MONSTER FLOW
