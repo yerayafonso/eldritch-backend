@@ -238,7 +238,7 @@ export async function getRandomQuestions(_quantity, _difficulty) {
 export async function saveMatch(_data) {
   // Function content: to be filled in
   // Inserts a completed game's high-level stats into the MATCHES table and returns the newly generated match_id, needed by saveMatchPlayers
-  // data format { roomCode, hostUserId, monsterId, startedAt, result }
+  // data format { roomCode, hostUserId, startedAt, result }
   // N.B. endedAt is generated automatically on record entry in the DB as well as match_id
   // called at: gameEnded, once per match or if a player disconnects and game ends early
 }
