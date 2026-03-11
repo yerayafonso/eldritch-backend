@@ -2,6 +2,7 @@ import { rooms } from '../rooms.js';
 import { getMonsterForStage, getRandomQuestions } from '../db/queries.js';
 import { QUESTIONS_PER_MONSTER, DIFFICULTY_MAP, TOTAL_STAGES } from '../constants.js';
 import { startNextRound } from './startNextRound.js';
+import { calculateAccuracy } from '../utils/calculateAccuracy.js';
 
 export async function resolveRound(io, code) {
   // INTIALISATION
@@ -77,19 +78,7 @@ export async function resolveRound(io, code) {
     rooms[code].roomStatus = 'ended';
     io.to(code).emit('roundResult', baseResultPayload);
 
-    // CALCULATE PLAYER'S ACCURACY
-    const perPlayerAccuracyArray = rooms[code].players.map((player) => {
-      const accuracyPercentage =
-        player.totalQuestions > 0 ? (player.correctAnswers * 100) / player.totalQuestions : 0;
-
-      return {
-        userId: player.userId,
-        name: player.name,
-        accuracy: accuracyPercentage,
-        correctAnswers: player.correctAnswers,
-        totalQuestions: player.totalQuestions,
-      };
-    });
+    const perPlayerAccuracyArray = calculateAccuracy(rooms[code].players);
 
     const gameEndedPayload = {
       result: result,
@@ -103,7 +92,7 @@ export async function resolveRound(io, code) {
 
     setTimeout(() => {
       delete rooms[code];
-    }, 180000); // 3 min delay before deleting the room
+    }, 180000); // 3 min delay before deleting the room to allow for stuff to happen if it needs to
   }
 
   // 2) NEXT MONSTER FLOW
