@@ -1,6 +1,10 @@
-export async function saveUser({ id: _id, name: _name }) {
+// these are all the SQL query function the backend needs for the game
+// For now they return mock data
+// Yeray is working on rewriting them to query the database
+
+export async function saveUser({ user_id: _id, name: _name }) {
   // to be filled in
-  // datta format: { id: uuid, name: string }
+  // data format: { user_id: uuid, name: string }
 }
 
 export async function getMonsterForStage(stageNumber) {
@@ -8,7 +12,7 @@ export async function getMonsterForStage(stageNumber) {
   // for now it returns a hardcoded monster, to update to query DB
   const mockMonsters = [
     {
-      id: 1,
+      monster_id: 1,
       name: 'Skeleton Knight',
       max_hp: 80,
       attack_damage: 10,
@@ -16,7 +20,7 @@ export async function getMonsterForStage(stageNumber) {
       difficulty_level: 'easy',
     },
     {
-      id: 2,
+      monster_id: 2,
       name: 'Crypt Warden',
       max_hp: 120,
       attack_damage: 15,
@@ -24,7 +28,7 @@ export async function getMonsterForStage(stageNumber) {
       difficulty_level: 'medium',
     },
     {
-      id: 3,
+      monster_id: 3,
       name: 'Eldritch Horror',
       max_hp: 160,
       attack_damage: 20,
@@ -230,7 +234,7 @@ export async function saveMatch(_data) {
   // to be filled in
   // data format { roomCode, hostUserId, monsterId, startedAt, endedAt, result }
   // called at: gameEnded, once per match
-  // must return { id } — the new match id, needed by saveMatchPlayers
+  // must return { match_id } — the new match id, needed by saveMatchPlayers
 }
 export async function saveMatchPlayers(_data) {
   // to be filled in
@@ -262,7 +266,7 @@ export async function getCharacter(characterId) {
   // from BE not from FE
   const mockCharacters = [
     {
-      id: 1,
+      character_id: 1,
       name: 'The Scholar',
       image_name: 'character1.png',
       description: 'A seeker of forbidden knowledge.',
@@ -272,7 +276,7 @@ export async function getCharacter(characterId) {
       difficulty_scaling: 1,
     },
     {
-      id: 2,
+      character_id: 2,
       name: 'The Investigator',
       image_name: 'character2.png',
       description: 'Used to dealing with the unknown.',
@@ -282,7 +286,7 @@ export async function getCharacter(characterId) {
       difficulty_scaling: 1,
     },
     {
-      id: 3,
+      character_id: 3,
       name: 'The Occultist',
       image_name: 'character3.png',
       description: 'Dabbles in the dark arts.',
@@ -293,7 +297,7 @@ export async function getCharacter(characterId) {
       difficulty_scaling: 2,
     },
     {
-      id: 4,
+      character_id: 4,
       name: 'The Veteran',
       image_name: 'character4.png',
       description: 'Hardened by past conflicts.',
@@ -305,5 +309,5 @@ export async function getCharacter(characterId) {
     },
   ];
 
-  return mockCharacters.find((c) => c.id === Number(characterId));
+  return mockCharacters.find((c) => c.character_id === Number(characterId));
 }
