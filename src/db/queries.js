@@ -2,10 +2,10 @@
 // For now they return mock data
 // Yeray is working on rewriting them to query the database
 
-export async function saveUser({ user_id: _id, name: _name }) {
+export async function saveUser({ user_id: _id, display_name: _display_name }) {
   // Function content: to be filled in
   // Inserts or updates a user record in the USERS table using their UUID and display name.
-  // data format: { user_id: uuid, name: string }
+  // data format: { user_id: uuid, display_name: string }
 }
 
 export async function getMonsterForStage(stageNumber) {

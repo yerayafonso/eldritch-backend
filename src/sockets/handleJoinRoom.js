@@ -42,7 +42,7 @@ export async function handleJoinRoom(io, socket, payload) {
   }
 
   try {
-    // await saveUser({ user_id: userId, name: name }); placeholder call
+    // await saveUser({ user_id: userId, display_name: name }); placeholder call
   } catch (err) {
     console.error('DB Error:', err);
     return socket.emit('joinError', { message: 'Could not write to DB', code: 'SERVER_ERROR' });
