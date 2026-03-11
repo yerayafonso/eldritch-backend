@@ -51,7 +51,10 @@ export async function handleStartGame(io, socket) {
   rooms[code].monsterHp = rooms[code].monster.max_hp;
 
   // Load questions in memory
-  const monsterQuestions = await getRandomQuestions(QUESTIONS_PER_MONSTER, 'easy');
+  const difficultyMap = ['easy', 'medium', 'hard'];
+  const stageDifficulty = difficultyMap[rooms[code].currentStage - 1];
+
+  const monsterQuestions = await getRandomQuestions(QUESTIONS_PER_MONSTER, stageDifficulty);
   rooms[code].questions = monsterQuestions;
   rooms[code].questionIds = monsterQuestions.map((question) => question.question_id);
   rooms[code].currentQuestionIndex = -1; // // it's startNextRound()'s task to increment this index to 0
