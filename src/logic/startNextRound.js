@@ -3,6 +3,11 @@ import { resolveRound } from './resolveRound.js';
 import { ROUND_DURATION_MS } from '../constants.js';
 
 export function startNextRound(io, code) {
+  if (!rooms[code]) {
+    console.warn('startNextRound called for missing room:', code);
+    return;
+  }
+
   rooms[code].roundNumber++;
   rooms[code].currentQuestionIndex++;
 

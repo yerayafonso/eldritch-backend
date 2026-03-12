@@ -18,6 +18,12 @@ import { calculateAccuracy } from '../utils/calculateAccuracy.js';
 
 export async function resolveRound(io, code) {
   // INTIALISATION
+
+  if (!rooms[code]) {
+    console.warn('resolveRound called for missing room', code);
+    return;
+  }
+
   clearTimeout(rooms[code].timerId);
 
   const currentQuestionIndex = rooms[code].currentQuestionIndex;
