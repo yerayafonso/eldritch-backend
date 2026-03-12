@@ -1,8 +1,8 @@
 import express from 'express';
-import { getAllCharacters } from './characters.controller';
+import { getAllCharacters } from './characters.controller.js';
 
 const charactersRouter = express.Router();
 
 charactersRouter.route('/').get(getAllCharacters);
 
-module.exports = charactersRouter;
+export default charactersRouter;

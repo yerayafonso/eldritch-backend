@@ -1,4 +1,4 @@
-import { getAllCharactersService } from './characters.service';
+import { getAllCharactersService } from './characters.service.js';
 
 export function getAllCharacters(req, res, next) {
   getAllCharactersService()
