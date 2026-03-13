@@ -12,6 +12,7 @@ import {
   DIFFICULTY_MAP,
   TOTAL_STAGES,
   ROOM_CLEANUP_DELAY_MS,
+  MONSTER_DAMAGE_ADJUSTMENT_FACTOR,
 } from '../constants.js';
 import { startNextRound } from './startNextRound.js';
 import { calculateAccuracy } from '../utils/calculateAccuracy.js';
@@ -52,7 +53,18 @@ export async function resolveRound(io, code) {
 
     // if monster has won round
     else {
-      totalTeamDamage += rooms[code].monster.attack_damage;
+      const baseDamage = rooms[code].monster.attack_damage;
+      const playerCount = rooms[code].players.length;
+
+      //  DAMAGE INFLICTED BY MONSTER SCALING FORMULA
+      //  It allows to scale the penalty for wrong answers based on the number of players while keeping the solo game fixed at the monster's default base damage value.
+      //  Damage inflected = Base Damage + ( Base Damage * MONSTER_DAMAGE_ADJUSTMENT_FACTOR * (Players - 1))
+      //  N.B because MONSTER_DAMAGE_ADJUSTMENT_FACTOR is currently set to 1 the formula equals to: Damage inflected =  Base Damage * Players
+
+      const adjustmentPerPlayer = baseDamage * MONSTER_DAMAGE_ADJUSTMENT_FACTOR;
+      const scaledDamage = baseDamage + adjustmentPerPlayer * (playerCount - 1);
+
+      totalTeamDamage += scaledDamage;
     }
 
     let playerResult = {
