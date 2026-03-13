@@ -5,6 +5,7 @@ import {
   saveMatch,
   saveMatchPlayers,
   updateRoomEnded,
+  updateUserQuestions,
 } from '../db/queries.js';
 
 import {
@@ -30,6 +31,7 @@ export async function resolveRound(io, code) {
   const currentQuestionIndex = rooms[code].currentQuestionIndex;
   const currentQuestion = rooms[code].questions[currentQuestionIndex];
   const correctAnswer = currentQuestion.correct_option;
+  const currentDifficulty = currentQuestion.difficulty;
 
   let totalMonsterDamage = 0;
 
@@ -49,6 +51,13 @@ export async function resolveRound(io, code) {
     if (isAnswerCorrect) {
       player.correctAnswers++;
       totalMonsterDamage += player.character.base_attack;
+      if (currentDifficulty === 'easy') {
+        player.easyCorrectAnswers++;
+      } else if (currentDifficulty === 'medium') {
+        player.mediumCorrectAnswers++;
+      } else if (currentDifficulty === 'hard') {
+        player.hardCorrectAnswers++;
+      }
     }
 
     // if monster has won round
@@ -148,6 +157,16 @@ export async function resolveRound(io, code) {
           match_id: match_id,
           user_id: p.userId,
           accuracy: p.accuracy,
+        }))
+      );
+
+      await updateUserQuestions(
+        rooms[code].players.map((p) => ({
+          user_id: p.userId,
+          total_questions_attempted: p.totalQuestions,
+          hard_questions_correct: p.hardCorrectAnswers,
+          medium_questions_correct: p.mediumCorrectAnswers,
+          easy_questions_correct: p.easyCorrectAnswers,
         }))
       );
     } catch (err) {

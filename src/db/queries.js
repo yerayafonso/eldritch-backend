@@ -84,3 +84,22 @@ export async function getCharacter(characterId) {
   ]);
   return rows[0];
 }
+
+export async function updateUserQuestions({
+  user_id,
+  total_questions_attempted,
+  hard_questions_correct,
+  medium_questions_correct,
+  easy_questions_correct,
+}) {
+  await db.query(
+    `UPDATE users SET total_questions_attempted= total_questions_attempted+$1, hard_questions_correct= hard_questions_correct+$2, medium_questions_correct=medium_questions_correct+$3, easy_questions_correct=easy_questions_correct+$4 WHERE user_id =$5 `,
+    [
+      total_questions_attempted,
+      hard_questions_correct,
+      medium_questions_correct,
+      easy_questions_correct,
+      user_id,
+    ]
+  );
+}

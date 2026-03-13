@@ -80,6 +80,9 @@ export async function handleJoinRoom(io, socket, payload) {
           name: name,
           character: selectedCharacter,
           correctAnswers: 0,
+          hardCorrectAnswers: 0,
+          mediumCorrectAnswers: 0,
+          easyCorrectAnswers: 0,
           totalQuestions: 0,
         },
       ],
@@ -123,6 +126,9 @@ export async function handleJoinRoom(io, socket, payload) {
       name: name,
       character: selectedCharacter,
       correctAnswers: 0,
+      hardCorrectAnswers: 0,
+      mediumCorrectAnswers: 0,
+      easyCorrectAnswers: 0,
       totalQuestions: 0,
     });
   }
