@@ -1,5 +1,6 @@
 import express from 'express';
 import charactersRouter from './endpoints/characters.routes.js';
+import leaderboardRouter from './endpoints/leaderboard.routes.js';
 import { pingRouter } from './endpoints/ping.routes.js';
 import cors from 'cors';
 
@@ -14,6 +15,7 @@ app.get('/', (req, res) => {
 
 app.use(`/api/characters`, charactersRouter);
 
+app.use(`/api/leaderboard`, leaderboardRouter);
 app.use('/ping', pingRouter);
 
 app.use((err, req, res, _next) => {

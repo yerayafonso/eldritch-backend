@@ -5,6 +5,7 @@ import {
   saveMatch,
   saveMatchPlayers,
   updateRoomEnded,
+  updateUserQuestions,
 } from '../db/queries.js';
 
 import {
@@ -30,6 +31,7 @@ export async function resolveRound(io, code) {
   const currentQuestionIndex = rooms[code].currentQuestionIndex;
   const currentQuestion = rooms[code].questions[currentQuestionIndex];
   const correctAnswer = currentQuestion.correct_option;
+  const currentDifficulty = currentQuestion.difficulty;
 
   let totalMonsterDamage = 0;
 
@@ -49,6 +51,13 @@ export async function resolveRound(io, code) {
     if (isAnswerCorrect) {
       player.correctAnswers++;
       totalMonsterDamage += player.character.base_attack;
+      if (currentDifficulty === 'easy') {
+        player.easyCorrectAnswers++;
+      } else if (currentDifficulty === 'medium') {
+        player.mediumCorrectAnswers++;
+      } else if (currentDifficulty === 'hard') {
+        player.hardCorrectAnswers++;
+      }
     }
 
     // if monster has won round
@@ -150,6 +159,8 @@ export async function resolveRound(io, code) {
           accuracy: p.accuracy,
         }))
       );
+
+      await updateUserQuestions(rooms[code].players);
     } catch (err) {
       console.error('Failed to save match to DB', { code, result, err });
     }

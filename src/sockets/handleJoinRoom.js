@@ -108,6 +108,9 @@ export async function handleJoinRoom(io, socket, payload) {
           name: name,
           character: selectedCharacter,
           correctAnswers: 0,
+          hardCorrectAnswers: 0,
+          mediumCorrectAnswers: 0,
+          easyCorrectAnswers: 0,
           totalQuestions: 0,
         },
       ],
@@ -152,6 +155,9 @@ export async function handleJoinRoom(io, socket, payload) {
       name: name,
       character: selectedCharacter,
       correctAnswers: 0,
+      hardCorrectAnswers: 0,
+      mediumCorrectAnswers: 0,
+      easyCorrectAnswers: 0,
       totalQuestions: 0,
     });
   }
@@ -175,12 +181,12 @@ export async function handleJoinRoom(io, socket, payload) {
     roomStatus: 'lobby',
   };
 
-  console.log('player joined room', {
-    socketId: socket.id,
-    userId: socket.data.userId,
-    name: socket.data.name,
-    roomCode: socket.data.roomCode,
-  });
+  // console.log('player joined room', {
+  //   socketId: socket.id,
+  //   userId: socket.data.userId,
+  //   name: socket.data.name,
+  //   roomCode: socket.data.roomCode,
+  // });
 
   io.to(code).emit('lobbyUpdated', lobbyUpdatedPayload);
 }
