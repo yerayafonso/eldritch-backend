@@ -7,6 +7,12 @@ export async function handleLeaveRoom(io, socket) {
 
   if (!code || !rooms[code]) return;
 
+  // if user leaves intentionally there's no need for disconnection timer so we clear it here
+  if (rooms[code].disconnectTimers && rooms[code].disconnectTimers[userId]) {
+    clearTimeout(rooms[code].disconnectTimers[userId]);
+    delete rooms[code].disconnectTimers[userId];
+  }
+
   rooms[code].players = rooms[code].players.filter((player) => player.userId !== userId);
 
   socket.leave(code);

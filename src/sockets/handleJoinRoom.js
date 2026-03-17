@@ -9,9 +9,9 @@ export async function handleJoinRoom(io, socket, payload) {
   // if not that they are creating a room
 
   let { name, roomCode: incomingCode, userId, characterId } = payload;
-
   let code = incomingCode?.trim().toUpperCase();
 
+  // basic guards
   if (!name) {
     socket.emit('joinError', { message: 'Name is required', code: 'NO_NAME' });
     return;
@@ -27,6 +27,7 @@ export async function handleJoinRoom(io, socket, payload) {
     return;
   }
 
+  // check if user is already in a room
   let existingRoomCodeFound = null;
   for (const key in rooms) {
     const isUserInThisRoom = rooms[key].players.some((player) => player.userId === userId);
@@ -36,19 +37,96 @@ export async function handleJoinRoom(io, socket, payload) {
     }
   }
 
+  // logic for reconnection and duplicate tabs
   if (existingRoomCodeFound) {
     if (code === existingRoomCodeFound) {
-      socket.emit('joinError', {
-        message: 'You are already in this room.',
-        code: 'ALREADY_IN_THIS_ROOM',
+      // we find the user by user ID and we update the socket id with the new id followign the reconnection
+      const player = rooms[code].players.find((p) => p.userId === userId);
+      const isDisconnecting = rooms[code].disconnectTimers && rooms[code].disconnectTimers[userId];
+
+      // is it a second tab?
+      if (player && !isDisconnecting) {
+        const oldSocket = io.sockets.sockets.get(player.socketId);
+        if (oldSocket && oldSocket.connected && oldSocket.id !== socket.id) {
+          // if so block
+          socket.emit('joinError', {
+            message: 'You are already playing in this room in another tab.',
+            code: 'ALREADY_IN_THIS_ROOM',
+          });
+          return;
+        }
+      }
+
+      // RECONNECTION FLOW
+
+      // Clear grace period timer if running
+      if (isDisconnecting) {
+        console.log(`SUCCESS! User ${userId} returned within the grace period.`);
+        clearTimeout(rooms[code].disconnectTimers[userId]);
+        delete rooms[code].disconnectTimers[userId];
+      }
+
+      socket.join(code);
+      socket.data.name = name;
+      socket.data.userId = userId;
+      socket.data.roomCode = code;
+      if (player) {
+        player.socketId = socket.id; // Update  player profile with the new socket ID
+      }
+
+      // resync players array
+      const publicPlayers = rooms[code].players.map((p) => ({
+        userId: p.userId,
+        name: p.name,
+        character: p.character,
+      }));
+
+      // tell front-end they are in lobby
+      socket.emit('lobbyUpdated', {
+        roomCode: code,
+        hostUserId: rooms[code].hostUserId,
+        players: publicPlayers,
+        roomStatus: rooms[code].roomStatus,
       });
+
+      // if the game is in course fast foward to game by emitting roundStarted
+      if (rooms[code].roomStatus === 'in-game') {
+        const currentQuestionIndex = rooms[code].currentQuestionIndex;
+        const question = rooms[code].questions[currentQuestionIndex];
+
+        socket.emit('roundStarted', {
+          monster: {
+            name: rooms[code].monster.name,
+            hp: rooms[code].monsterHp,
+            maxHp: rooms[code].monster.max_hp,
+            image_name: rooms[code].monster.image_name,
+          },
+          question: {
+            id: question.question_id,
+            prompt: question.prompt,
+            options: {
+              a: question.option_a,
+              b: question.option_b,
+              c: question.option_c,
+              d: question.option_d,
+            },
+          },
+          gameState: {
+            teamHp: rooms[code].teamHp,
+            maxTeamHp: rooms[code].maxTeamHp,
+            roundNumber: rooms[code].roundNumber,
+            roundDeadline: rooms[code].roundDeadline,
+          },
+        });
+      }
+      return;
     } else {
       socket.emit('joinError', {
         message: `You are already playing in room ${existingRoomCodeFound}. Please finish or leave that game first.`,
         code: 'IN_DIFFERENT_ROOM',
       });
+      return;
     }
-    return;
   }
 
   let selectedCharacter;
