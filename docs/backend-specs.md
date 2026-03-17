@@ -468,7 +468,7 @@ optional:
 ```
 {
   "result": "defeat", // or "victory" or "abandoned"
-  "reason": "player_disconnected", // or "monster_defeated" or "out_of_questions" or "team_hp_zero"
+  "reason": "player_disconnected", // or "monster_defeated" or "out_of_questions" or "team_hp_zero" or "server_error"
   "monsterId": 1,
   "teamHpFinal": 0,
   "monsterHpFinal": 45,
