@@ -15,7 +15,6 @@ import {
   ROOM_CLEANUP_DELAY_MS,
   MONSTER_DAMAGE_ADJUSTMENT_FACTOR,
 } from '../constants.js';
-import { startNextRound } from './startNextRound.js';
 import { calculateAccuracy } from '../utils/calculateAccuracy.js';
 
 export async function resolveRound(io, code) {
@@ -184,7 +183,6 @@ export async function resolveRound(io, code) {
 
     try {
       // load new monster
-
       rooms[code].monster = await getMonsterForStage(rooms[code].currentStage);
       rooms[code].monsterHp = rooms[code].monster.max_hp;
 
@@ -206,9 +204,8 @@ export async function resolveRound(io, code) {
         nextStage: rooms[code].currentStage,
       };
 
+      rooms[code].waitingForHostReady = true;
       io.to(code).emit('roundResult', roundResultNextStagePayload);
-
-      startNextRound(io, code);
     } catch (err) {
       console.error('Failed to load next stage from DB', { code, err });
       rooms[code].roomStatus = 'ended';
@@ -228,7 +225,7 @@ export async function resolveRound(io, code) {
   // 3)  NEXT ROUND FLOW
   else {
     rooms[code].answers = {};
+    rooms[code].waitingForHostReady = true;
     io.to(code).emit('roundResult', baseResultPayload);
-    startNextRound(io, code);
   }
 }

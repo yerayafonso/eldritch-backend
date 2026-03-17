@@ -2,8 +2,7 @@
 
 ### **Goal**
 
-Build a real-time 4-player quiz combat prototype where all players answer the same question simultaneously and the team progresses through three monsters in sequence, each using increasing question difficulty, while sharing a team HP pool.
----
+## Build a real-time 4-player quiz combat prototype where all players answer the same question simultaneously and the team progresses through three monsters in sequence, each using increasing question difficulty, while sharing a team HP pool.
 
 ## **Player Flow**
 
@@ -21,10 +20,9 @@ Build a real-time 4-player quiz combat prototype where all players answer the sa
    - Players submit an answer
 
    - Round resolves simultaneously
-   
-   -   If monster HP reaches 0:
-      -   Load the next monster
-      -   Continue battle
+   - If monster HP reaches 0:
+   - Load the next monster
+   - Continue battle
 
 5. End:
    - **Victory** if all 3 monsters are defeated
@@ -45,7 +43,7 @@ Build a real-time 4-player quiz combat prototype where all players answer the sa
 
 - Round timer: **10–15 seconds**
 
--  No answer \= wrong
+- No answer \= wrong
 
 - Next round begins with a new question until game ends
 
@@ -54,23 +52,20 @@ Build a real-time 4-player quiz combat prototype where all players answer the sa
 - Wrong answer or no answer → Team takes damage
 
 - Round resolves when:
-   - All players have submitted an answer, OR
-   - The timer expires
+  - All players have submitted an answer, OR
+  - The timer expires
 
 ---
 
 ### Monster Progression (MVP)
 
 - The game includes 3 monsters preloaded in the database.
-   -  Monsters are fought sequentially:
-      -  Monster 1
-      -  Monster 2
-      -  Monster 3
+  - Monsters are fought sequentially:
+    - Monster 1
+    - Monster 2
+    - Monster 3
 
-    Each monster loads questions of increasing difficulty:
-      - Monster 1 → Level 1 (easy) questions
-      - Monster 2 → Level 2 (medium) questions
-      - Monster 3 → Level 3 (hard) questions
+  Each monster loads questions of increasing difficulty: - Monster 1 → Level 1 (easy) questions - Monster 2 → Level 2 (medium) questions - Monster 3 → Level 3 (hard) questions
 
 ---
 
