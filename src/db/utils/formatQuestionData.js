@@ -4,6 +4,15 @@ function formatQuestions(data) {
   const optionsArr = ['a', 'b', 'c', 'd'];
 
   for (let question of data) {
+    if (
+      question.question.length > 105 ||
+      question.correct_answer > 24 ||
+      question.incorrect_answers[0] > 24 ||
+      question.incorrect_answers[1] > 24 ||
+      question.incorrect_answers[2] > 24
+    ) {
+      continue;
+    }
     const n = Math.floor(Math.random() * 4);
 
     const newQuestionObject = {};
