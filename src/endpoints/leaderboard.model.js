@@ -10,9 +10,10 @@ last_seen,
 total_questions_attempted,
 hard_questions_correct,
 medium_questions_correct,
-easy_questions_correct FROM users WHERE total_questions_attempted> 0 ORDER BY(easy_questions_correct + medium_questions_correct + hard_questions_correct)/total_questions_attempted DESC, easy_questions_correct* 10+ medium_questions_correct*20 + hard_questions_correct*30 DESC `
+easy_questions_correct FROM users WHERE total_questions_attempted> 0 ORDER BY easy_questions_correct* 10+ medium_questions_correct*20 + hard_questions_correct*30 DESC, (easy_questions_correct + medium_questions_correct + hard_questions_correct)/total_questions_attempted DESC `
     )
     .then(({ rows }) => {
+      console.log('model', rows);
       return rows;
     });
 }
