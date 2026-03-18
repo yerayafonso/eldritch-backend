@@ -56,6 +56,10 @@ If initialised succesfully, you will see the backend is accesible at `http://loc
 
 ## Backend architecture
 
+### Game Logic
+
+The backend runs a quiz loop that supports 1–4 players per match and keeps the game state on the server. Each character has fixed stats (base_attack and base_sanity), and those values are used directly in the combat math so the UI and the underlying logic always match. Correct answers apply damage equal to base_attack, while wrong or missing answers add to a shared team damage pool derived from the monster’s attack_damage and the number of incorrect players, so both monster HP and incoming damage are scaled based on the number of players in the room. To keep pacing consistent between solo and multiplayer, monster HP and damage are calculated at runtime from per‑player base values and a pair of tuning constants (MONSTER_HP_ADJUSTMENT_FACTOR and MONSTER_DAMAGE_ADJUSTMENT_FACTOR), which makes it easy to adjust difficulty without changing the core rules or data model.
+
 ### Game lifecyle and relationship to frontend
 
 1.  **Setup Phase**

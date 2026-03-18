@@ -1,4 +1,5 @@
 import { rooms } from '../rooms.js';
+import { scaleMonsterHP } from '../utils/scaleMonsterHP.js';
 import { DIFFICULTY_MAP, MIN_PLAYERS, QUESTIONS_PER_MONSTER } from '../constants.js';
 import { getMonsterForStage, getRandomQuestions } from '../db/queries.js';
 import { startNextRound } from '../logic/startNextRound.js';
@@ -49,8 +50,11 @@ export async function handleStartGame(io, socket) {
   rooms[code].maxTeamHp = totalSanity;
 
   // Load first monster
+
   rooms[code].monster = await getMonsterForStage(1);
-  rooms[code].monsterHp = rooms[code].monster.max_hp;
+  const scaledHp = scaleMonsterHP(rooms[code].monster.max_hp, rooms[code].players.length);
+  rooms[code].monster.max_hp = scaledHp;
+  rooms[code].monsterHp = scaledHp;
 
   // Load questions in memory
 
