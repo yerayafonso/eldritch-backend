@@ -113,10 +113,10 @@ Junction table. One row per player per match, storing their accuracy score. Writ
 
 ```js
   const roomStatusExample = {
-    code: 'ABCD',
-    hostUserId: 'uuid-123',
-    roomStatus: 'in-game', // or "lobby" or "ended"
-    startedAt: timestap,
+    code: 'ABCDEF', // string
+    hostUserId: 'uuid-123', // string (UUID)
+    roomStatus: 'in-game',  // 'lobby' | 'in-game' | 'ended'
+    startedAt: 1710000000000, // timestamp ms | null
     players: [
       {
       userId: 'uuid-123',
@@ -124,6 +124,9 @@ Junction table. One row per player per match, storing their accuracy score. Writ
       name: 'Alice',
       correctAnswers: 5,
       totalQuestions: 10,
+      hardCorrectAnswers: 5,
+      mediumCorrectAnswers: 0,
+      easyCorrectAnswers: 0,
       character: {
         id: 1,
         name: 'The Scholar',
@@ -132,11 +135,11 @@ Junction table. One row per player per match, storing their accuracy score. Writ
         base_attack: 5,
         base_sanity: 150,
         difficulty_scaling: 1,
-        backstory: 'I'm 82 and I am very wise'
+        bio: 'I'm 82 and I am very wise'
       }
     }
     ],
-    currentStage: 1, // 1/2/3
+    currentStage: 1, // 1 | 2 | 3
     roundNumber: 1, // nth round across the whole game session
     maxTeamHp: 150,
     teamHp: 150,
@@ -161,16 +164,19 @@ Junction table. One row per player per match, storing their accuracy score. Writ
         difficulty: 'medium',
         category: 'tech',
       }
-      // ... of course more questions here
+      // ...
     ],
     questionIds: [10, 25, 7, 3, 19],
     currentQuestionIndex: 0,
     currentQuestionId: 10,
     roundDeadline: Date.now() + 15000,
-    timerId: {Timeout object},
+    timerId: {Timeout object}, // quiz countdown timer
     answers: {
       'uuid-123': null
     },
+    disconnectTimers: {'uuid-123': {Timeout object}, // ...
+    }, // holds per-plyaer timeout details for the grace period reconnection logic
+    waitingForHostReady: true, //boolean  set to true in resolveRound after a round ends. Used to wait to fire startNextRound until the front end sends clientReadyForNextRound.
   };
 
   const rooms = { ABCD: roomStatusExample };
@@ -182,27 +188,30 @@ Junction table. One row per player per match, storing their accuracy score. Writ
 
 - FE: A user opens the game, and either clicks a button to create a room or to join one, the inputted data is held in react memory.
 - FE: A new screen then appears to choose a character, GET request to API to obtain list of available characters. Once selected a joinRoom event is emitted.
-- BE: The server detects the joinRoom event and initialises the room object in memory and updates the users in memory as needed broadcasting everytime a lobbyUpdated event.
-- FE: Users are moved to the lobby. At some point the host clicks on a start game button emitting the StartGame event.
-- BE: The server detects the startGame event triggered by the host and loads initial data (the first monster and the questions) and hands control to the internal logic functions.
+- BE: The server detects the `joinRoom` event and initialises the room object in memory and updates the users in memory as needed broadcasting everytime a `lobbyUpdated` event.
+- FE: Users are moved to the lobby. At some point the host clicks on a start game button emitting the `StartGame` event.
+- BE: The server detects the `startGame` event triggered by the host and loads initial data (the first monster and the questions) and hands control to the internal logic functions.
 
 2.  Battle Loop
 
-- BE startNextRound.js: this is called by startGame. Sets the 15s timer, laods the question and emits roundStarted with the current question.
-- FE: the users are shown first question and and mutliple choices and timer. Once a user submits an answer they trigger the custom event "submitAnswer"
-- BE: The server detects the event SubmitAnswer, receive and save answer. If all answers are received timer is ended early. It calls resolveRound.js function
-- BE: resolveRound triggered by the timer expiring (in StartNextRound) OR all answers being in. It calculates damage and updates HPs. If monsters are not defeated and team HP > 0 calls startNextRound and battle loop continues. Once the first monster is defeated, it loads the new one.
+- BE: `startGame` (and subsquently `handleClientReady`) call the function `startNextRound.js`: increments roundNumber, sets the quiz timer, laods the question and emits to the room roundStarted with the current question.
+- FE: the users are shown the question and and mutliple choices and the coundown timer. Once a user submits an answer they trigger the socket event `submitAnswer`.
+- BE: The server detects `SubmitAnswer`, receives validates and saves answer. If all answers are received timer is ended early. Either way, the function `resolveRound.js` is then called.
+- BE: `resolveRound.js` triggered by the timer expiring (in `StartNextRound`) or all answers being in. Calculates damage, updates HPs, and emits `roundResult` to the room. After emitting, it sets room.waitingForHostReady = true and does not call `startNextRound` directly. If a monster was defeated mid-game, the next monster and question set are also loaded from the DB here before `roundResult` is emitted.
+- FE: Displays the round result screen — correct answer, HP changes, per-player results and any necessary animation. Once ready, the FE emits `clientReadyForNextRound`.
+- BE: once it receives `clientReadyForNextRound`, it verifies the sender is the host, clears waitingForHostReady, and calls `startNextRound` — looping back to the top of this battle loop.
 
 3.  Resolution Phase
 
-- BE: resolveRound: on the other hand if either monster HP or team HP are <= 0 then gameEnded event is broadcasted and final stats are saved to the database.
-- FE: it lsitens for gameEnded when it reiceves it either shows a win screen or gameover screen.
+- BE: resolveRound: if either monster HP or team HP are <= 0 then `gameEnded` event is broadcasted and final stats are saved to the database.
+- FE: it lsitens for `gameEnded` when it reiceves it either shows a win screen or gameover screen.
 
-## Imporntant considerations
+## Important considerations
 
-- No need for API endpoints other than GET characters. This because chracters objects are stating and are fetched before the game starts. Once the game stars web sockets are much more suitable.
-- No need for OOP, at least initially, just plain objects.
-- The name/code entry and character selection happens locally in react, only once both are completed joinRoom is emitted by the client with the full payload (name, userId, roomCode, characterId). This prevents "partial" players in the backend rooms state. If they're in the array, they're fully initialized.
+- No need for API endpoints other than:
+  - GET characters: chracters objects are static and are fetched before the game (and socket communication) starts.
+  - GET leaderboard: This because leaderboard results are stored in the DB across games.
+- The display name/code entry and character selection happens locally in react, only once both are completed joinRoom is emitted by the client with the full payload (name, userId, roomCode, characterId). This prevents "partial" players in the backend rooms state. If they're in the array, they're fully initialized.
 
 ## REST API Endpoints
 
@@ -227,6 +236,10 @@ Junction table. One row per player per match, storing their accuracy score. Writ
     "backstory": "I'm 82 and I am very wise"
   }
 ]
+
+### GET /api/leaderboard
+
+[TO BE ADDED]
 ```
 
 ## Sockets : event schema
@@ -290,7 +303,7 @@ Junction table. One row per player per match, storing their accuracy score. Writ
 
 ### leaveRoom
 
-**direction**: client → server  
+**direction**: client to server  
 **payload**: none
 **server side effects**:
 
@@ -305,7 +318,7 @@ Junction table. One row per player per match, storing their accuracy score. Writ
 
 ### requestLobby
 
-**direction**: client → server  
+**direction**: client to server  
 **payload**: none
 emits in response:
 
@@ -455,6 +468,20 @@ optional:
 - Show results: Display the correct answer and highlight who got it right/wrong.
 - Refresh Stats: Update the "Live Accuracy" display for each player using correctAnswers and totalQuestions.
 - Wait: Display the results for a few seconds before the next roundStarted event arrives.
+
+---
+
+### clientReadyForNextRound
+
+**direction**: client to server
+**trigger**: the host player signals readiness to proceed after seeing a roundResult, specifically after each round result display and after a stage transition (isNextStage: true).
+**payload**: none, roomCode and userId are read from socket.data.
+**server side effects**:
+
+- Check room.waitingForHostReady is true.
+- Unset the flag.
+- Call startNextRound(io, code).
+- Emits in response: roundStarted to the room (via startNextRound).
 
 ---
 
