@@ -1,4 +1,5 @@
 import { rooms } from '../rooms.js';
+import { scaleMonsterHP } from '../utils/scaleMonsterHP.js';
 import {
   getMonsterForStage,
   getRandomQuestions,
@@ -184,7 +185,9 @@ export async function resolveRound(io, code) {
     try {
       // load new monster
       rooms[code].monster = await getMonsterForStage(rooms[code].currentStage);
-      rooms[code].monsterHp = rooms[code].monster.max_hp;
+      const scaledHp = scaleMonsterHP(rooms[code].monster.max_hp, rooms[code].players.length);
+      rooms[code].monster.max_hp = scaledHp;
+      rooms[code].monsterHp = scaledHp;
 
       // Load new questions in memory
       const newDifficulty = DIFFICULTY_MAP[rooms[code].currentStage - 1];
