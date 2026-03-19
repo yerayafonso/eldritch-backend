@@ -1,10 +1,12 @@
 import { rooms } from '../rooms.js';
 import { resolveRound } from '../logic/resolveRound.js';
+import { saveUser } from '../db/queries.js';
 
-export function handleSubmitAnswer(io, socket, payload) {
+export async function handleSubmitAnswer(io, socket, payload) {
   //Get socket details
   const code = socket.data.roomCode;
   const userId = socket.data.userId;
+  const name = socket.data.name;
 
   //Destructure payload
   let { questionId, answer } = payload;
@@ -15,7 +17,6 @@ export function handleSubmitAnswer(io, socket, payload) {
       message: 'Room is not in-game',
       code: 'WRONG_STATUS',
     });
-    return;
   }
 
   if (rooms[code].roundDeadline < Date.now()) {
@@ -44,7 +45,12 @@ export function handleSubmitAnswer(io, socket, payload) {
 
   // save the answer
   rooms[code].answers[userId] = answer;
-  console.log('answer saved');
+
+  try {
+    await saveUser({ user_id: userId, display_name: name });
+  } catch (err) {
+    console.error('Failed to update last_seen on answer', err);
+  }
 
   // if all players reply before timer we reoslve the round
   // N.B. if timer expires we resolve the round too (see handle Start)
