@@ -58,17 +58,6 @@ export async function handleDisconnect(io, socket) {
     const allPlayersSnapshot = [...rooms[code].players];
     rooms[code].players = rooms[code].players.filter((player) => player.userId !== userId);
 
-    if (rooms[code].players.length === 0) {
-      try {
-        await updateRoomEnded(code);
-      } catch (err) {
-        console.error('DB Error: Failed to update room ended_at on empty room', { code, err });
-      } finally {
-        delete rooms[code];
-      }
-      return;
-    }
-
     // IN-GAME INTERRUPTION FLOW
     if (rooms[code].roomStatus === 'in-game') {
       const perPlayerAccuracy = calculateAccuracy(allPlayersSnapshot);
@@ -122,6 +111,20 @@ export async function handleDisconnect(io, socket) {
           delete rooms[code];
         }
       }, ROOM_CLEANUP_DELAY_MS); // 3 min delay before deleting the room to allow for stuff to happen if it needs to
+
+      delete rooms[code].disconnectTimers[userId];
+      return;
+    }
+
+    if (rooms[code].players.length === 0) {
+      try {
+        await updateRoomEnded(code);
+      } catch (err) {
+        console.error('DB Error: Failed to update room ended_at on empty room', { code, err });
+      } finally {
+        delete rooms[code];
+      }
+      return;
     }
 
     // LOBBY DISCONNECTION FLOW
