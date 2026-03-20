@@ -6,21 +6,28 @@
 
 ## Intro
 
-Eldritch is a multi-player horror-themed quiz-based video game. Built as a web-based application, it allows users to experience an immersive horror RPG combined with elements of a competitive quiz. Players must answer questions to fight eldritch monsters.
+Eldritch is a multiplayer horror-themed quiz game built as a real-time web application. Teams of 1–4 players answer multiple-choice questions to defeat a sequence of monsters; correct answers damage the monster, while incorrect or missing answers reduce the team’s shared HP.
 
-Each match lets a team of 1–4 players face a sequence of three monsters (three stages). Every stage is made up of many rounds where in every round the server sends a multiple-choice question to all players; correct answers damage the monster, while wrong or missing answers damage the shared team HP. Defeat all monsters before the team HP reaches zero to win.
+The project uses a server-authoritative architecture with a Node.js game engine on the backend, PostgreSQL for persistent data, and Phaser on the frontend purely as a rendering/game-loop layer. The client sends player actions (joining a room, selecting an answer), while all game state and combat logic are handled on the server and synchronised to players via Socket.io.
 
-The project was built with a decoupled architecture, using a Node.js game engine on the backend and Phaser on the frontend as a dedicated game-loop renderer. A key engineering decision was to keep Phaser focused on rendering and client-side interaction, while the backend retained authority over the actual game logic. The frontend sends player actions, such as joining a room or selecting an answer, but it does not calculate authoritative outcomes. Instead, it listens for server responses and re-renders accordingly.
+### Why this architecture
 
-This separation provides several advantages:
+- Consistent game logic across both solo and multiplayer modes
+- No game rules or correct answers exposed to the client
+- Real-time game state handled entirely on the backend
+- Clear separation between game logic (backend) and rendering (frontend)
 
-- **Consistency:** The same game rules apply across solo and multiplayer modes because the authoritative logic lives in one place.
+## What this project demonstrates
 
-- **Security:** Combat resolution and correct answers are not exposed directly in the client, reducing opportunities for manipulation.
+This backend was built to demonstrate practical real-world engineering decisions rather than just CRUD functionality. The project focuses on:
 
-- **Scalability:** Frontend scenes can evolve visually without requiring major rewrites of backend logic.
-
-- **Maintainability:** Phaser handles the experiential layer, while Node.js and Socket.io handle synchronisation and state, keeping responsibilities cleanly separated.
+- Real-time multiplayer state management using Socket.io
+- Server-authoritative game logic (the client never calculates game outcomes)
+- Reconnection and disconnect handling with a timed grace-period system
+- In-memory game state vs database persistence for performance-critical logic
+- Event-driven architecture with a clearly defined socket event schema
+- Relational database design using PostgreSQL with a structured match history model
+- Separation of responsibilities between a Node.js backend and a Phaser frontend
 
 ## Local Installation
 
@@ -52,28 +59,28 @@ npm run seed
 npm run dev
 ```
 
-If initialised succesfully, you will see the backend is accesible at `http://localhost:3000`
+If initialised successfully, you will see the backend is accessible at `http://localhost:3000`
 
 ## Backend architecture
 
 ### Game Logic
 
-The backend runs a quiz loop that supports 1–4 players per match and keeps the game state on the server. Each character has fixed stats (base_attack and base_sanity), and those values are used directly in the combat math so the UI and the underlying logic always match. Correct answers apply damage equal to base_attack, while wrong or missing answers add to a shared team damage pool derived from the monster’s attack_damage and the number of incorrect players, so both monster HP and incoming damage are scaled based on the number of players in the room. To keep pacing consistent between solo and multiplayer, monster HP and damage are calculated at runtime from per‑player base values and a pair of tuning constants (MONSTER_HP_ADJUSTMENT_FACTOR and MONSTER_DAMAGE_ADJUSTMENT_FACTOR), which makes it easy to adjust difficulty without changing the core rules or data model.
+The backend runs a quiz loop that supports 1 to 4 players per match and keeps the game state on the server. Each character has fixed stats (base_attack and base_sanity), and those values are used directly in the combat math so the UI and the underlying logic always match. Correct answers apply damage equal to base_attack, while wrong or missing answers add to a shared team damage pool derived from the monster’s attack_damage and the number of incorrect players, so both monster HP and incoming damage are scaled based on the number of players in the room. To keep pacing consistent between solo and multiplayer, monster HP and damage are calculated at runtime from per‑player base values and a pair of tuning constants (MONSTER_HP_ADJUSTMENT_FACTOR and MONSTER_DAMAGE_ADJUSTMENT_FACTOR), which makes it easy to adjust difficulty without changing the core rules or data model.
 
-### Game lifecyle and relationship to frontend
+### Game lifecycle and relationship to frontend
 
 1.  **Setup Phase**
 
 - FE: A user opens the game, and either clicks a button to create a room or to join one, the inputted data is held in react memory.
-- FE: A new screen then appears to choose a character, GET request to API to obtain list of available characters. Once selected a joinRoom event is emitted.
+- FE: A new screen then appears to choose a character, GET request to API to obtain list of available characters. Once selected, a joinRoom event is emitted.
 - BE: The server detects the `joinRoom` event and initialises the room object in memory and updates the users in memory as needed broadcasting everytime a `lobbyUpdated` event.
 - FE: Users are moved to the lobby. At some point the host clicks on a start game button emitting the `StartGame` event.
 - BE: The server detects the `startGame` event triggered by the host and loads initial data (the first monster and the questions) and hands control to the internal logic functions.
 
 2.  **Battle Loop**
 
-- BE: `startGame` (and subsquently `handleClientReady`) call the function `startNextRound.js`: increments roundNumber, sets the quiz timer, laods the question and emits to the room roundStarted with the current question.
-- FE: the users are shown the question and and mutliple choices and the coundown timer. Once a user submits an answer they trigger the socket event `submitAnswer`.
+- BE: `startGame` (and subsequently `handleClientReady`) call the function `startNextRound.js`: increments roundNumber, sets the quiz timer, loads the question and emits to the room roundStarted with the current question.
+- FE: the users are shown the question and and multiple choices and the countdown timer. Once a user submits an answer they trigger the socket event `submitAnswer`.
 - BE: The server detects `SubmitAnswer`, receives validates and saves answer. If all answers are received timer is ended early. Either way, the function `resolveRound.js` is then called.
 - BE: `resolveRound.js` triggered by the timer expiring (in `StartNextRound`) or all answers being in. Calculates damage, updates HPs, and emits `roundResult` to the room. After emitting, it sets room.waitingForHostReady = true and does not call `startNextRound` directly. If a monster was defeated mid-game, the next monster and question set are also loaded from the DB here before `roundResult` is emitted.
 - FE: Displays the round result screen — correct answer, HP changes, per-player results and any necessary animation. Once ready, the FE emits `clientReadyForNextRound`.
@@ -82,7 +89,11 @@ The backend runs a quiz loop that supports 1–4 players per match and keeps the
 3.  **Resolution Phase**
 
 - BE: resolveRound: if either monster HP or team HP are <= 0 then `gameEnded` event is broadcasted and final stats are saved to the database.
-- FE: it listens for `gameEnded` when it reiceves it either shows a win screen or gameover screen.
+- FE: it listens for `gameEnded` when it receives it either shows a win screen or gameover screen.
+
+### Persistent Identity (UUID + Local Storage)
+
+To avoid the friction of a sign-up flow, a stateless identity strategy is used. Unique IDs are generated via the **Web Crypto API** (`crypto.randomUUID()`) and stored in **Local Storage**. This allows the backend to recognise returning players, supporting seamless reconnection to active rooms and long-term stat tracking without needing a full authentication server.
 
 ### Disconnect / Reconnection Flow
 
@@ -135,7 +146,7 @@ On joinRoom, the server checks whether the userId is already present in any room
 **Single-Path Architecture for Solo and Multiplayer Modes**
 
 - **Problem:** Developing separate state management and logic flows for single-player versus multiplayer modes increases code duplication, introduces mode-specific bugs, and complicates future feature development.
-- **Solution:** The system employs a "Single-Path" architecture. Solo play is not treated as a distinct game mode; instead, a solo player is simply routed into a standard multiplayer lobby. The Node.js server processes all game events, timer countdowns, and HP calculations through the exact same WebSocket event pipeline and in-memory `rooms` object regardless of player count, ensuring absolute uniformity in game rules and reducing maintenance overhead.
+- **Solution:** The backend uses a single code path for solo and multiplayer games. Solo play is not treated as a distinct game mode; instead, a solo player is simply routed into a standard multiplayer lobby. The Node.js server processes all game events, timer countdowns, and HP calculations through the exact same WebSocket event pipeline and in-memory `rooms` object regardless of player count, ensuring absolute uniformity in game rules and reducing maintenance overhead.
 
 **Deferred Database Persistence for Real-Time Performance**
 
@@ -153,7 +164,7 @@ The backend serves as the source of truth for the entire application. It combine
 
 ## Relational Database Architecture
 
-A normalised schema handles long-term "Cold Data" and persistent records, ensuring a clear separation between content, user identity, and match results:
+The DB stores long-term "cold data" and persistent records, ensuring a clear separation between content, user identity, and match results:
 
 - **Game Content Library:** Tables for `QUESTIONS`, `MONSTERS`, and `CHARACTERS` act as a read-only source of truth, ensuring that game balance and content are decoupled from core server logic.
 
@@ -230,17 +241,6 @@ erDiagram
     UUID user_id PK, FK
     NUMERIC accuracy
   }
-
-ITEMS {
-  SERIAL item_id PK
-  TEXT name
-  TEXT description
-  TEXT image_name
-  TEXT type
-  INT boost_attack
-  INT boost_defense
-  INT boost_sanity
-}
 
   %% Relationships
   USERS ||--o{ ROOMS : hosts
@@ -346,7 +346,7 @@ When a game starts, the backend loads a batch of QUESTIONS_PER_MONSTER questions
       'uuid-123': null
     },
     disconnectTimers: {'uuid-123': {Timeout object}, /* ... */
-    }, // holds per-plyaer timeout details for the grace period reconnection logic
+    }, // holds per-player timeout details for the grace period reconnection logic
     waitingForHostReady: true, //boolean  set to true in resolveRound after a round ends. Used to wait to fire startNextRound until the front end sends clientReadyForNextRound.
   };
 
@@ -429,10 +429,6 @@ Rather than forcing all communication through one protocol, the architecture is 
 **Query Parameters**: None
 
 **Response**: 200 OK
-
-### Persistent Identity (UUID + Local Storage)
-
-To avoid the friction of a sign-up flow, a stateless identity strategy is used. Unique IDs are generated via the **Web Crypto API** (`crypto.randomUUID()`) and stored in **Local Storage**. This allows the backend to recognise returning players, supporting seamless reconnection to active rooms and long-term stat tracking without needing a full authentication server.
 
 ## Sockets : event schema
 
@@ -795,7 +791,7 @@ This function handles the preparation and delivery of a new question to the room
 
 #### resolveRound(io, code)
 
-This function calculatess the outcome of the player submissions. It clears the round timer, then compares each player's submitted answer against the correct option. Correct answers deal damage to the monster; incorrect or missing answers deal damage to the team. After updating both HPs it evaluates three possible outcomes:
+This function calculates the outcome of the player submissions. It clears the round timer, then compares each player's submitted answer against the correct option. Correct answers deal damage to the monster; incorrect or missing answers deal damage to the team. After updating both HPs it evaluates three possible outcomes:
 
 - Game over — team HP is zero or questions are exhausted: emits roundResult followed immediately by gameEnded, saves the match to the database, and sets roomStatus to "ended".
 
@@ -803,4 +799,4 @@ This function calculatess the outcome of the player submissions. It clears the r
 
 - Round complete — game is still active: resets the answers map and emits roundResult.
 
-In outcomes 2 and 3, after emitting roundResult the function sets room.waitingForHostReady = true and returns — it does not call startNextRound directly. The game loop resumes only when the host emits clientReadyForNextRound. This is to allow the front end any time it needs to play animations inbetween questions.
+In outcomes 2 and 3, after emitting roundResult the function sets room.waitingForHostReady = true and returns — it does not call startNextRound directly. The game loop resumes only when the host emits clientReadyForNextRound. This is to allow the front end any time it needs to play animations in between questions.
