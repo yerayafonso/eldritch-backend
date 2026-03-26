@@ -1,8 +1,8 @@
 # Eldritch Game Backend
 
-[Front End Live Demo](https://eldritch-game.netlify.app/)
+[Front End Live Demo](https://forbidden-knowledge-ya.netlify.app/)
 
-[Front End Repo](https://github.com/Mdoughty-dev/Eldritch_Game)
+[Front End Repo](https://github.com/yerayafonso/Eldritch_Game)
 
 ## Intro
 
